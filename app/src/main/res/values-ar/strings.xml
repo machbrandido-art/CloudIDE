@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">CloudIDE</string>
+
+    <!-- Navigation -->
+    <string name="nav_projects">المشاريع</string>
+    <string name="nav_editor">المحرر</string>
+    <string name="nav_builds">عمليات البناء</string>
+    <string name="nav_settings">الإعدادات</string>
+    <string name="nav_gallery">معرض المكوّنات</string>
+
+    <!-- Drawer -->
+    <string name="drawer_recent_repos">المستودعات الأخيرة</string>
+    <string name="drawer_sign_out">تسجيل الخروج</string>
+    <string name="drawer_connected">متصل</string>
+
+    <!-- Status -->
+    <string name="status_passed">ناجح</string>
+    <string name="status_building">قيد البناء</string>
+    <string name="status_failed">فشل</string>
+    <string name="status_pending">قيد الانتظار</string>
+    <string name="status_cancelled">ملغي</string>
+
+    <!-- Actions -->
+    <string name="action_open_menu">فتح القائمة</string>
+    <string name="action_notifications">الإشعارات</string>
+    <string name="action_continue">متابعة</string>
+    <string name="action_connect">اتصال</string>
+    <string name="action_back">رجوع</string>
+    <string name="action_ok">حسناً</string>
+
+    <!-- Placeholder screens -->
+    <string name="screen_onboarding">التمهيد</string>
+    <string name="screen_connect">الاتصال بـ GitHub</string>
+    <string name="screen_build">البناء</string>
+    <string name="placeholder_body">سيتم بناء هذه الشاشة في مرحلة لاحقة.</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_skip">تخطي</string>
+    <string name="onboarding_title_1">اكتب الكود في أي مكان</string>
+    <string name="onboarding_subtitle_1">محرر كود حقيقي على هاتفك مباشرة.</string>
+    <string name="onboarding_title_2">ابنِ في السحابة</string>
+    <string name="onboarding_subtitle_2">GitHub يبني تطبيقك، وهاتفك يبقى سريعاً.</string>
+    <string name="onboarding_title_3">شاهد البناء ثم ثبّت</string>
+    <string name="onboarding_subtitle_3">تابع كل خطوة مباشرة وثبّت التطبيق بلمسة واحدة.</string>
+    <string name="onboarding_step_deps">جلب الاعتماديات</string>
+    <string name="onboarding_step_build">بناء الحزمة</string>
+    <string name="onboarding_step_apk">توليد ملف APK</string>
+    <string name="onboarding_install">تثبيت</string>
+
+    <!-- Connect -->
+    <string name="connect_token_label">رمز الوصول الشخصي</string>
+    <string name="connect_show_token">إظهار الرمز</string>
+    <string name="connect_hide_token">إخفاء الرمز</string>
+    <string name="connect_how_title">كيف تحصل على الرمز</string>
+    <string name="connect_step_1">افتح إعدادات GitHub ثم إعدادات المطور (Developer settings).</string>
+    <string name="connect_step_2">أنشئ رمزاً دقيق الصلاحيات (fine-grained) بصلاحية قراءة وكتابة على Contents وActions وWorkflows للمستودعات المحددة.</string>
+    <string name="connect_step_3">الصق الرمز في الحقل أعلاه.</string>
+    <string name="connect_open_github">افتح صفحة رموز GitHub</string>
+    <string name="connect_stored_securely">يُخزَّن بأمان على هذا الجهاز.</string>
+    <string name="connect_error_invalid">رفض GitHub هذا الرمز. تأكد أنك نسخته كاملاً وأنه لم تنتهِ صلاحيته.</string>
+    <string name="connect_error_network">تعذّر الوصول إلى GitHub. تحقق من اتصالك بالإنترنت وحاول مجدداً.</string>
+    <string name="connect_error_unknown">حدث خطأ ما. حاول مرة أخرى.</string>
+    <string name="connect_error_no_browser">لم يتم العثور على متصفح لفتح الرابط.</string>
+
+    <!-- Projects -->
+    <string name="projects_search_hint">ابحث في المشاريع</string>
+    <string name="projects_search_clear">مسح البحث</string>
+    <string name="projects_no_builds">لا توجد عمليات بناء بعد</string>
+    <string name="projects_status_unavailable">الحالة غير متاحة</string>
+    <string name="projects_view_error">عرض الخطأ</string>
+    <string name="projects_add">إضافة مشروع</string>
+    <string name="projects_empty">لا توجد مستودعات بعد. ستظهر هنا المستودعات التي تملكها أو تتعاون فيها.</string>
+    <string name="projects_no_match">لا توجد مشاريع مطابقة لبحثك.</string>
+    <string name="projects_error_offline">أنت غير متصل بالإنترنت. تحقق من اتصالك وحاول مجدداً.</string>
+    <string name="projects_error_rate_limit">تم بلوغ حد الطلبات في GitHub. يمكنك المحاولة مجدداً عند %1$s.</string>
+    <string name="projects_error_unknown">تعذّر تحميل مستودعاتك. حاول مرة أخرى.</string>
+    <string name="projects_retry">إعادة المحاولة</string>
+    <string name="projects_new_title">مشروع جديد</string>
+    <string name="projects_new_body">إنشاء مشروع جديد سيتوفر في مرحلة لاحقة.</string>
+
+    <!-- Stats -->
+    <string name="stat_projects">المشاريع</string>
+    <string name="stat_building">قيد البناء</string>
+    <string name="stat_passed_rate">نسبة النجاح</string>
+    <string name="percent_format">%1$d%%</string>
+
+    <!-- Gallery -->
+    <string name="gallery_title">معرض المكوّنات</string>
+    <string name="gallery_section_chips">شارات الحالة</string>
+    <string name="gallery_section_buttons">الأزرار</string>
+    <string name="gallery_section_stats">بطاقات الإحصاءات</string>
+    <string name="gallery_section_cards">البطاقات</string>
+    <string name="gallery_section_top_bar">الشريط العلوي</string>
+    <string name="gallery_button_primary">زر رئيسي</string>
+    <string name="gallery_button_outlined">زر بإطار</string>
+    <string name="gallery_button_loading">جارٍ التحميل</string>
+    <string name="gallery_button_disabled">معطّل</string>
+    <string name="gallery_card_title">بطاقة تجريبية</string>
+    <string name="gallery_card_body">زوايا بنصف قطر 24dp وظل ناعم.</string>
+    <string name="gallery_top_bar_sample">عنوان الصفحة</string>
+</resources>
