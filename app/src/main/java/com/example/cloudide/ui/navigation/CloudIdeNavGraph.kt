@@ -14,15 +14,16 @@ import com.example.cloudide.ui.projects.ProjectsScreen
 @Composable
 fun CloudIdeNavGraph(
     navController: NavHostController,
+    startDestination: String,
     onOpenDrawer: () -> Unit,
 ) {
     NavHost(
         navController = navController,
-        startDestination = Routes.Onboarding,
+        startDestination = startDestination,
     ) {
         composable(Routes.Onboarding) {
             OnboardingScreen(
-                onContinue = {
+                onFinish = {
                     navController.navigate(Routes.Connect) {
                         popUpTo(Routes.Onboarding) { inclusive = true }
                     }
@@ -36,35 +37,50 @@ fun CloudIdeNavGraph(
                     navController.navigate(Routes.Projects) {
                         popUpTo(Routes.Connect) { inclusive = true }
                     }
-                }
+                },
+                onBack = null,
             )
         }
 
         composable(Routes.Projects) {
-            ProjectsScreen(onOpenDrawer = onOpenDrawer)
+            ProjectsScreen(
+                onMenuClick = onOpenDrawer,
+                onOpenEditor = {
+                    navController.navigate(Routes.Editor) {
+                        launchSingleTop = true
+                    }
+                },
+                onViewError = {
+                    navController.navigate(Routes.Build) {
+                        launchSingleTop = true
+                    }
+                },
+            )
         }
 
         composable(Routes.Editor) {
             PlaceholderScreen(
                 title = "Editor",
-                onOpenDrawer = onOpenDrawer,
+                onMenuClick = onOpenDrawer,
             )
         }
 
         composable(Routes.Build) {
-            BuildScreen(onOpenDrawer = onOpenDrawer)
+            BuildScreen(
+                onMenuClick = onOpenDrawer,
+            )
         }
 
         composable(Routes.Settings) {
             PlaceholderScreen(
                 title = "Settings",
-                onOpenDrawer = onOpenDrawer,
+                onMenuClick = onOpenDrawer,
             )
         }
 
         composable(Routes.Gallery) {
             ComponentsGalleryScreen(
-                onBack = { navController.popBackStack() },
+                onMenuClick = onOpenDrawer,
             )
         }
     }
