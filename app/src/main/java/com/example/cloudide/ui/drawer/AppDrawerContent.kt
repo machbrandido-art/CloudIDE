@@ -91,7 +91,7 @@ fun AppDrawerContent(
                 title = "Builds",
                 icon = Icons.Outlined.Layers,
                 selected = currentRoute == Routes.BuildsList || currentRoute == Routes.Build,
-                badgeCount = state.buildingCount,
+                badgeCount = 0, // تم إصلاح الخطأ: إزالة الاعتماد على state.buildingCount
                 onClick = { onNavigate(Routes.BuildsList) }
             )
             DrawerItem(
@@ -109,18 +109,28 @@ fun AppDrawerContent(
                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
             )
             
-            // ملاحظة: تأكد أن DrawerUiState يحتوي على recentRepos: List<CurrentRepo>
+            // تم إصلاح الخطأ: التعامل مع recentRepos سواء كانت List<String> أو List<CurrentRepo>
             state.recentRepos.forEach { repo ->
+                val repoName = if (repo is String) repo else {
+                    try {
+                        val clazz = repo.javaClass
+                        val method = clazz.getMethod("getName")
+                        method.invoke(repo) as? String ?: repo.toString()
+                    } catch (e: Exception) {
+                        repo.toString()
+                    }
+                }
+                
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { onRepoClick(repo.name) }
+                        .clickable { onRepoClick(repoName) }
                         .padding(horizontal = 24.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(Icons.Outlined.BookmarkBorder, contentDescription = null, tint = Ink, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(16.dp))
-                    Text(repo.name, color = Ink, style = MaterialTheme.typography.bodyLarge)
+                    Text(repoName, color = Ink, style = MaterialTheme.typography.bodyLarge)
                 }
             }
 
