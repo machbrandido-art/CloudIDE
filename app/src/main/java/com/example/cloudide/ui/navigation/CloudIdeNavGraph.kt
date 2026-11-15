@@ -5,6 +5,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.cloudide.ui.build.BuildScreen
+import com.example.cloudide.ui.build.BuildsListScreen
 import com.example.cloudide.ui.connect.ConnectScreen
 import com.example.cloudide.ui.gallery.ComponentsGalleryScreen
 import com.example.cloudide.ui.onboarding.OnboardingScreen
@@ -46,14 +47,10 @@ fun CloudIdeNavGraph(
             ProjectsScreen(
                 onMenuClick = onOpenDrawer,
                 onOpenEditor = {
-                    navController.navigate(Routes.Editor) {
-                        launchSingleTop = true
-                    }
+                    navController.navigate(Routes.Editor) { launchSingleTop = true }
                 },
                 onViewError = {
-                    navController.navigate(Routes.Build) {
-                        launchSingleTop = true
-                    }
+                    navController.navigate(Routes.BuildsList) { launchSingleTop = true }
                 },
             )
         }
@@ -66,8 +63,15 @@ fun CloudIdeNavGraph(
         }
 
         composable(Routes.Build) {
-            BuildScreen(
+            BuildScreen(onMenuClick = onOpenDrawer)
+        }
+
+        composable(Routes.BuildsList) {
+            BuildsListScreen(
                 onMenuClick = onOpenDrawer,
+                onOpenRun = {
+                    navController.navigate(Routes.Build) { launchSingleTop = true }
+                },
             )
         }
 
@@ -79,9 +83,7 @@ fun CloudIdeNavGraph(
         }
 
         composable(Routes.Gallery) {
-            ComponentsGalleryScreen(
-                onMenuClick = onOpenDrawer,
-            )
+            ComponentsGalleryScreen(onMenuClick = onOpenDrawer)
         }
     }
 }

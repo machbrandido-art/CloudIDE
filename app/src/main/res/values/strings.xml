@@ -99,4 +99,15 @@
     <string name="gallery_card_title">Sample card</string>
     <string name="gallery_card_body">24dp radius with a soft shadow.</string>
     <string name="gallery_top_bar_sample">Page title</string>
+    
+    <!-- Stage 5: Builds list + install -->
+<string name="builds_list_title">Builds</string>
+<string name="builds_list_empty">No builds yet.</string>
+<string name="builds_list_error">Error: %s</string>
+<string name="builds_list_retry">Retry</string>
+<string name="builds_list_open_repo_first">Open a repo from Projects first.</string>
+<string name="build_install_dialog_title">Allow install?</string>
+<string name="build_install_dialog_body">To install the APK, allow installs from this app in the system settings.</string>
+<string name="build_install_dialog_open">Open settings</string>
+<string name="action_cancel">Cancel</string>
 </resources>

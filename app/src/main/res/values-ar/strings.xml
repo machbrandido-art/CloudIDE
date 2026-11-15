@@ -99,4 +99,15 @@
     <string name="gallery_card_title">بطاقة تجريبية</string>
     <string name="gallery_card_body">زوايا بنصف قطر 24dp وظل ناعم.</string>
     <string name="gallery_top_bar_sample">عنوان الصفحة</string>
+    
+    <string name="builds_list_title">البناءات</string>
+<string name="builds_list_empty">لا توجد بناءات بعد.</string>
+<string name="builds_list_error">خطأ: %s</string>
+<string name="builds_list_retry">إعادة المحاولة</string>
+<string name="builds_list_open_repo_first">افتح مستودعًا من المشاريع أولاً.</string>
+<string name="build_install_dialog_title">السماح بالتثبيت؟</string>
+<string name="build_install_dialog_body">للتثبيت، اسمح بالتثبيت من هذا التطبيق في إعدادات النظام.</string>
+<string name="build_install_dialog_open">فتح الإعدادات</string>
+<string name="action_cancel">إلغاء</string>
+
 </resources>

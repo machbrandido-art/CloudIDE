@@ -1,5 +1,6 @@
 package com.example.cloudide.data.github
 
+import com.example.cloudide.data.github.dto.ArtifactsResponseDto
 import com.example.cloudide.data.github.dto.DispatchRequestDto
 import com.example.cloudide.data.github.dto.PutContentRequest
 import com.example.cloudide.data.github.dto.RepoDto
@@ -16,6 +17,7 @@ import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
+import retrofit2.http.Streaming
 
 interface GitHubApi {
 
@@ -103,4 +105,36 @@ interface GitHubApi {
         @Path(value = "path", encoded = true) path: String,
         @Body body: PutContentRequest,
     ): Response<ResponseBody>
+
+    // ---------- Stage 5: Logs + Artifacts + Builds list ----------
+
+    @Streaming
+    @GET("repos/{owner}/{repo}/actions/jobs/{job_id}/logs")
+    suspend fun getJobLogs(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path("job_id") jobId: Long,
+    ): Response<ResponseBody>
+
+    @GET("repos/{owner}/{repo}/actions/runs/{run_id}/artifacts")
+    suspend fun getArtifactsForRun(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path("run_id") runId: Long,
+    ): Response<ArtifactsResponseDto>
+
+    @Streaming
+    @GET("repos/{owner}/{repo}/actions/artifacts/{artifact_id}/zip")
+    suspend fun downloadArtifactZip(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path("artifact_id") artifactId: Long,
+    ): Response<ResponseBody>
+
+    @GET("repos/{owner}/{repo}/actions/runs")
+    suspend fun listRuns(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Query("per_page") perPage: Int = 30,
+    ): Response<WorkflowRunsDto>
 }

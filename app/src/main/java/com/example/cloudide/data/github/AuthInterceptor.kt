@@ -14,17 +14,22 @@ class AuthInterceptor @Inject constructor(
 
     override fun intercept(chain: Interceptor.Chain): Response {
         val original = chain.request()
-        val builder = original.newBuilder()
-            .header("Accept", "application/vnd.github+json")
-            .header("X-GitHub-Api-Version", "2022-11-28")
+        val isGitHubApi = original.url.host == "api.github.com"
 
-        val hasExplicitAuth = original.header("Authorization") != null
+        val builder = original.newBuilder()
         var tokenAttached = false
-        if (!hasExplicitAuth) {
-            val token = runBlocking { tokenStore.token.first() }
-            if (token != null) {
-                builder.header("Authorization", "Bearer $token")
-                tokenAttached = true
+
+        if (isGitHubApi) {
+            builder.header("Accept", "application/vnd.github+json")
+                .header("X-GitHub-Api-Version", "2022-11-28")
+
+            val hasExplicitAuth = original.header("Authorization") != null
+            if (!hasExplicitAuth) {
+                val token = runBlocking { tokenStore.token.first() }
+                if (token != null) {
+                    builder.header("Authorization", "Bearer $token")
+                    tokenAttached = true
+                }
             }
         }
 
