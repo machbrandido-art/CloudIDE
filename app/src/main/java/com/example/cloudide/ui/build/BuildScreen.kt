@@ -212,7 +212,7 @@ private fun LiveBuildView(
     }
 
     // Logs Card
-    LogsCard(state = state, onToggle = onToggleLogs)
+    LogsCard(state = state, isFinished = bs.isFinished, onToggle = onToggleLogs)
 
     // Cancel Button
     OutlinedPillButton(
@@ -302,7 +302,7 @@ private fun SuccessView(
         }
     }
 
-    LogsCard(state = state, onToggle = onToggleLogs)
+    LogsCard(state = state, isFinished = bs.isFinished, onToggle = onToggleLogs)
 }
 
 // ---------------- Failed View ----------------
@@ -360,7 +360,7 @@ private fun FailedView(
         }
     }
     
-    LogsCard(state = state, onToggle = onToggleLogs)
+    LogsCard(state = state, isFinished = bs.isFinished, onToggle = onToggleLogs)
 }
 
 // ---------------- Components ----------------
@@ -414,7 +414,7 @@ private fun StepCard(step: BuildStep, totalSteps: Int, isLive: Boolean, index: I
         // Progress bar for running step
         if (step.isRunning) {
             Spacer(Modifier.height(12.dp))
-            val progress = if (step == step) 0.65f else 0f // Mock progress for now (Stage 5)
+            val progress = 0.65f // Mock progress for now
             Row(verticalAlignment = Alignment.CenterVertically) {
                 LinearProgressIndicator(
                     progress = { progress },
@@ -430,7 +430,7 @@ private fun StepCard(step: BuildStep, totalSteps: Int, isLive: Boolean, index: I
 }
 
 @Composable
-private fun LogsCard(state: BuildUiState, onToggle: () -> Unit) {
+private fun LogsCard(state: BuildUiState, isFinished: Boolean, onToggle: () -> Unit) {
     AppCard {
         Row(
             modifier = Modifier.fillMaxWidth().clickable { onToggle() },
@@ -447,7 +447,7 @@ private fun LogsCard(state: BuildUiState, onToggle: () -> Unit) {
                 when {
                     state.isLoadingLogs -> Text("Loading logs...", color = InkMuted)
                     state.logsError != null -> Text("Error: ${state.logsError}", color = ChipRed)
-                    !state.buildState!!.isFinished -> Text("Logs available when the job finishes.", color = InkMuted)
+                    !isFinished -> Text("Logs available when the job finishes.", color = InkMuted)
                     state.logs.isNullOrBlank() -> Text("No logs returned.", color = InkMuted)
                     else -> {
                         if (state.logsTruncated) {

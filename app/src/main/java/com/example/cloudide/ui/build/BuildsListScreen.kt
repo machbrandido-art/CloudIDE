@@ -1,6 +1,5 @@
 package com.example.cloudide.ui.build
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +16,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -42,6 +42,11 @@ fun BuildsListScreen(
 ) {
     val state by viewModel.state.collectAsState()
 
+    // هذا هو الحل: كلما ظهرت الشاشة، نقوم بتحديث البيانات
+    LaunchedEffect(Unit) {
+        viewModel.refresh()
+    }
+
     Scaffold(
         containerColor = Cream,
         topBar = { AppTopBar(title = "Builds", onMenuClick = onMenuClick) },
@@ -52,12 +57,13 @@ fun BuildsListScreen(
                 .padding(padding)
                 .padding(16.dp),
         ) {
-            if (state.repoFullName.isBlank()) {
+            if (state.repoFullName.isBlank() && state.error != null) {
                 AppCard(containerColor = Peach) {
-                    Text("Open a repo from Projects first.", color = Ink)
+                    Text(state.error!!, color = Ink)
                 }
                 return@Column
             }
+            
             Text(
                 text = state.repoFullName,
                 style = MaterialTheme.typography.titleMedium,
@@ -81,7 +87,7 @@ fun BuildsListScreen(
                     )
                 }
 
-                state.runs.isEmpty() -> Text("No builds yet.", color = InkMuted)
+                state.runs.isEmpty() -> Text("No builds yet for this repo.", color = InkMuted)
 
                 else -> LazyColumn(
                     modifier = Modifier.fillMaxSize(),

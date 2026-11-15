@@ -34,29 +34,25 @@ class BuildsListViewModel @Inject constructor(
     private val _state = MutableStateFlow(BuildsListUiState())
     val state: StateFlow<BuildsListUiState> = _state.asStateFlow()
 
-    init {
+    // أزلنا init واستبدلناها بـ refresh() لكي نستدعيها من الشاشة كلما دخلنا
+    fun refresh() {
         viewModelScope.launch {
             val cur = currentRepoStore.current.first()
             if (cur == null) {
-                _state.update { it.copy(isLoading = false, error = "No repo selected") }
+                _state.update { 
+                    it.copy(isLoading = false, error = "No repo selected. Open one from Projects first.", runs = emptyList()) 
+                }
                 return@launch
             }
-            _state.update { it.copy(owner = cur.owner, repoName = cur.name) }
-            refresh()
-        }
-    }
-
-    fun refresh() {
-        val s = _state.value
-        if (s.repoFullName.isBlank()) return
-        viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, error = null) }
-            detailsRepo.listRuns(s.owner, s.repoName)
+            
+            _state.update { it.copy(owner = cur.owner, repoName = cur.name, isLoading = true, error = null) }
+            
+            detailsRepo.listRuns(cur.owner, cur.name)
                 .onSuccess { runs ->
                     _state.update { it.copy(runs = runs, isLoading = false) }
                 }
                 .onFailure { e ->
-                    _state.update { it.copy(isLoading = false, error = e.message) }
+                    _state.update { it.copy(isLoading = false, error = e.message ?: "Unknown error") }
                 }
         }
     }
