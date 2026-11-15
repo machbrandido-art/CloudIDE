@@ -10,8 +10,10 @@ import com.example.cloudide.data.github.WorkflowCreateResult
 import com.example.cloudide.data.github.WorkflowSetup
 import com.example.cloudide.data.local.CurrentRepoStore
 import com.example.cloudide.domain.BuildArtifact
+import com.example.cloudide.domain.BuildJob
 import com.example.cloudide.domain.BuildState
 import com.example.cloudide.domain.BuildStatus
+import com.example.cloudide.domain.BuildStep
 import com.example.cloudide.domain.BuildTriggerResult
 import com.example.cloudide.util.ApkInstaller
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,12 +21,14 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import javax.inject.Inject
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.Instant
 
 enum class WorkflowUiStatus { Unknown, Exists, Missing }
 
@@ -37,6 +41,7 @@ data class BuildUiState(
     val isCreatingWorkflow: Boolean = false,
     val isTriggering: Boolean = false,
     val buildState: BuildState? = null,
+    val elapsedSeconds: Long = 0L,
     val logs: String? = null,
     val logsTruncated: Boolean = false,
     val isLoadingLogs: Boolean = false,
@@ -48,11 +53,12 @@ data class BuildUiState(
     val downloadProgress: Float = 0f,
     val errorMessage: String? = null,
     val infoMessage: String? = null,
+    val showLogs: Boolean = false,
 ) {
     val repoFullName: String
         get() = if (owner.isBlank() || repoName.isBlank()) "" else "$owner/$repoName"
     val ready: Boolean get() = repoFullName.isNotBlank() && branch.isNotBlank()
-    val isLive: Boolean get() = buildState?.isFinished == false
+    val isLive: Boolean get() = buildState != null && !buildState.isFinished
     val isSuccess: Boolean get() = buildState?.uiStatus == BuildStatus.Passed
     val isFailed: Boolean get() = buildState?.uiStatus == BuildStatus.Failed
     val isCancelled: Boolean get() = buildState?.uiStatus == BuildStatus.Cancelled
@@ -72,6 +78,7 @@ class BuildViewModel @Inject constructor(
     val state: StateFlow<BuildUiState> = _state.asStateFlow()
 
     private var observeJob: Job? = null
+    private var timerJob: Job? = null
     private var lastRunId: Long? = null
     private var logsLoadedForRun: Long? = null
     private var artifactsLoadedForRun: Long? = null
@@ -92,13 +99,11 @@ class BuildViewModel @Inject constructor(
     }
 
     fun setBranch(value: String) = _state.update { it.copy(branch = value) }
+    fun toggleLogs() = _state.update { it.copy(showLogs = !it.showLogs) }
 
     fun checkWorkflow() {
         val s = _state.value
-        if (!s.ready) {
-            _state.update { it.copy(errorMessage = "Pick a repo and branch first.") }
-            return
-        }
+        if (!s.ready) return
         viewModelScope.launch {
             _state.update { it.copy(isCheckingWorkflow = true, errorMessage = null) }
             when (val r = workflowSetup.check(s.owner, s.repoName, s.branch)) {
@@ -147,36 +152,21 @@ class BuildViewModel @Inject constructor(
         viewModelScope.launch {
             _state.update {
                 it.copy(
-                    isTriggering = true,
-                    errorMessage = null,
-                    infoMessage = null,
-                    buildState = null,
-                    logs = null,
-                    artifacts = emptyList(),
-                    apkFile = null,
+                    isTriggering = true, errorMessage = null, infoMessage = null,
+                    buildState = null, logs = null, artifacts = emptyList(), apkFile = null, elapsedSeconds = 0
                 )
             }
             logsLoadedForRun = null
             artifactsLoadedForRun = null
             when (val r = buildRepo.trigger(s.owner, s.repoName, s.branch)) {
                 is BuildTriggerResult.Triggered -> {
-                    _state.update {
-                        it.copy(isTriggering = false, infoMessage = "Run #${r.runId} started")
-                    }
+                    _state.update { it.copy(isTriggering = false) }
                     startObserving(r.runId)
                 }
-                BuildTriggerResult.NoNewRun -> _state.update {
-                    it.copy(isTriggering = false, errorMessage = "No new run appeared in 30s.")
-                }
-                is BuildTriggerResult.WorkflowMissing -> _state.update {
-                    it.copy(isTriggering = false, errorMessage = r.message)
-                }
-                is BuildTriggerResult.Forbidden -> _state.update {
-                    it.copy(isTriggering = false, errorMessage = r.message)
-                }
-                is BuildTriggerResult.Error -> _state.update {
-                    it.copy(isTriggering = false, errorMessage = r.message)
-                }
+                BuildTriggerResult.NoNewRun -> _state.update { it.copy(isTriggering = false, errorMessage = "No new run appeared in 30s.") }
+                is BuildTriggerResult.WorkflowMissing -> _state.update { it.copy(isTriggering = false, errorMessage = r.message) }
+                is BuildTriggerResult.Forbidden -> _state.update { it.copy(isTriggering = false, errorMessage = r.message) }
+                is BuildTriggerResult.Error -> _state.update { it.copy(isTriggering = false, errorMessage = r.message) }
             }
         }
     }
@@ -190,11 +180,28 @@ class BuildViewModel @Inject constructor(
                 buildRepo.observe(s.owner, s.repoName, runId).collect { bs ->
                     _state.update { it.copy(buildState = bs) }
                     if (bs.isFinished) {
+                        timerJob?.cancel()
                         loadLogsIfReady()
                         if (bs.uiStatus == BuildStatus.Passed) loadArtifactsIfSuccess()
+                    } else {
+                        startTimerIfNeeded(bs)
                     }
                 }
-            } catch (_: Exception) {
+            } catch (_: Exception) {}
+        }
+    }
+
+    private fun startTimerIfNeeded(bs: BuildState) {
+        if (timerJob?.isActive == true) return
+        val job = bs.jobs.firstOrNull() ?: return
+        val startedAt = job.startedAt ?: return
+        val startMillis = runCatching { Instant.parse(startedAt).toEpochMilli() }.getOrNull() ?: return
+        
+        timerJob = viewModelScope.launch {
+            while (true) {
+                val diff = (System.currentTimeMillis() - startMillis) / 1000
+                _state.update { it.copy(elapsedSeconds = diff.coerceAtLeast(0)) }
+                delay(1000)
             }
         }
     }
@@ -202,8 +209,7 @@ class BuildViewModel @Inject constructor(
     fun loadLogsIfReady() {
         val s = _state.value
         val bs = s.buildState ?: return
-        if (!bs.isFinished) return
-        if (logsLoadedForRun == bs.run.id) return
+        if (!bs.isFinished || logsLoadedForRun == bs.run.id) return
         logsLoadedForRun = bs.run.id
         viewModelScope.launch {
             _state.update { it.copy(isLoadingLogs = true, logsError = null) }
@@ -216,18 +222,10 @@ class BuildViewModel @Inject constructor(
                 .onSuccess { text ->
                     val truncated = text.length > MAX_LOGS_CHARS
                     val display = if (truncated) text.takeLast(MAX_LOGS_CHARS) else text
-                    _state.update {
-                        it.copy(
-                            logs = display,
-                            logsTruncated = truncated,
-                            isLoadingLogs = false,
-                        )
-                    }
+                    _state.update { it.copy(logs = display, logsTruncated = truncated, isLoadingLogs = false) }
                 }
                 .onFailure { e ->
-                    _state.update {
-                        it.copy(isLoadingLogs = false, logsError = e.message)
-                    }
+                    _state.update { it.copy(isLoadingLogs = false, logsError = e.message) }
                 }
         }
     }
@@ -235,18 +233,13 @@ class BuildViewModel @Inject constructor(
     fun loadArtifactsIfSuccess() {
         val s = _state.value
         val bs = s.buildState ?: return
-        if (!bs.isFinished || bs.uiStatus != BuildStatus.Passed) return
-        if (artifactsLoadedForRun == bs.run.id) return
+        if (!bs.isFinished || bs.uiStatus != BuildStatus.Passed || artifactsLoadedForRun == bs.run.id) return
         artifactsLoadedForRun = bs.run.id
         viewModelScope.launch {
             _state.update { it.copy(isLoadingArtifacts = true) }
             detailsRepo.listArtifacts(s.owner, s.repoName, bs.run.id)
-                .onSuccess { list ->
-                    _state.update { it.copy(artifacts = list, isLoadingArtifacts = false) }
-                }
-                .onFailure {
-                    _state.update { it.copy(isLoadingArtifacts = false) }
-                }
+                .onSuccess { list -> _state.update { it.copy(artifacts = list, isLoadingArtifacts = false) } }
+                .onFailure { _state.update { it.copy(isLoadingArtifacts = false) } }
         }
     }
 
@@ -257,23 +250,12 @@ class BuildViewModel @Inject constructor(
         viewModelScope.launch {
             _state.update { it.copy(isDownloadingApk = true, downloadProgress = 0f) }
             val dest = apkInstaller.apkCacheDir()
-            detailsRepo.downloadApk(
-                owner = s.owner,
-                repo = s.repoName,
-                artifactId = artifact.id,
-                destDir = dest,
-                onProgress = { p -> _state.update { it.copy(downloadProgress = p) } },
-            ).onSuccess { file ->
-                _state.update {
-                    it.copy(isDownloadingApk = false, downloadProgress = 1f, apkFile = file)
-                }
+            detailsRepo.downloadApk(s.owner, s.repoName, artifact.id, dest, { p ->
+                _state.update { it.copy(downloadProgress = p) }
+            }).onSuccess { file ->
+                _state.update { it.copy(isDownloadingApk = false, downloadProgress = 1f, apkFile = file) }
             }.onFailure { e ->
-                _state.update {
-                    it.copy(
-                        isDownloadingApk = false,
-                        errorMessage = e.message ?: "Download failed",
-                    )
-                }
+                _state.update { it.copy(isDownloadingApk = false, errorMessage = e.message) }
             }
         }
     }
@@ -302,23 +284,18 @@ class BuildViewModel @Inject constructor(
         val runId = lastRunId ?: return
         val s = _state.value
         viewModelScope.launch {
-            buildRepo.rerun(s.owner, s.repoName, runId)
-                .onSuccess {
-                    _state.update { st -> st.copy(infoMessage = "Rerun requested.") }
-                    logsLoadedForRun = null
-                    artifactsLoadedForRun = null
-                    startObserving(runId)
-                }
-                .onFailure { e ->
-                    _state.update { st -> st.copy(errorMessage = e.message) }
-                }
+            buildRepo.rerun(s.owner, s.repoName, runId).onSuccess {
+                _state.update { st -> st.copy(buildState = null, logs = null, artifacts = emptyList(), apkFile = null) }
+                logsLoadedForRun = null
+                artifactsLoadedForRun = null
+                startObserving(runId)
+            }
         }
     }
 
-    fun consumeMessages() = _state.update { it.copy(errorMessage = null, infoMessage = null) }
-
     override fun onCleared() {
         observeJob?.cancel()
+        timerJob?.cancel()
         super.onCleared()
     }
 
